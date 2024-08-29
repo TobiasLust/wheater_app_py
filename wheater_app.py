@@ -1,56 +1,72 @@
 import requests
-
-
-class Wheater:
-    api_key = "5183fe7ad30d48cc9ea215648242808"
-
-    def __init__(self):
-        self.city: str = ""
-        self.country: str = ""
-        self.celcius: float = 0
-        self.feelslike_c: float = 0
-        self.local_time: str = ""
-        self.state:str = ""
-        self.clouds: float = 0
-        self.humidity: float = ""
-
-    def __str__(self) -> str:
-        return f"""Hoy: {self.local_time} en {self.city} {self.country}
-    ----
-    {self.celcius}C
-    Sensacion termica: {self.feelslike_c}C
-    Clima: {self.state}
-    Humedad: {self.humidity}%
-    Nubes: {self.clouds}%
-    """
-
-    def get_city(self, city: str):
-
-        res = requests.get(
-            f"http://api.weatherapi.com/v1/current.json?key={Wheater.api_key}&q={city}&aqi=no"
-        )
-        if res.status_code == 400:
-            res = res.json()
-            raise requests.exceptions.RequestException(f'{res["error"]["message"]}')
-
-        res = res.json()
-        self.city = city.title()
-        self.country = res["location"]["country"]
-        self.local_time = res["location"]["localtime"]
-        self.celcius = res["current"]["temp_c"]
-        self.feelslike_c = res["current"]["feelslike_c"]
-        self.state = res["current"]["condition"]["text"]
-        self.humidity = res["current"]["humidity"]
-        self.clouds = res["current"]["cloud"]
+from tkinter import *
+from tkinter import ttk
+from wheater import Wheater
 
 
 def main():
-    city = Wheater()
-    try:
-        city.get_city(input("City: "))
-        print(city)
-    except requests.exceptions.RequestException as e:
-        print(e)
+    root = Tk()
+    root.title("Weather App")
+    root.geometry("400x300")
+    root.grid()
+
+    def clean_frame(frame):
+        if frame:
+            for widget in frame.winfo_children():
+                widget.destroy()
+
+    # Asignar los frames correctamente sin aplicar grid en la misma línea
+    mainframe = ttk.Frame(root, padding=5)
+    mainframe.grid(row=1, column=1)  # Aplica grid en una línea separada
+
+    wheater_frame = ttk.Frame(root, padding=5)
+    wheater_frame.grid(row=2, column=1)  # Aplica grid en una línea separada
+
+    def view_wheater(city):
+        clean_frame(wheater_frame)  # Limpia el contenido del frame
+        if city:
+            city_info = Wheater()
+            try:
+                city_info.get_city(city)
+
+                name_city = ttk.Label(wheater_frame, text=city_info.city)
+                name_country = ttk.Label(wheater_frame, text=city_info._country)
+                celcius_city = ttk.Label(wheater_frame, text=f"{city_info._celcius}° C")
+                feelslike_c = ttk.Label(
+                    wheater_frame,
+                    text=f"Sensacion Terminca: {city_info._feelslike_c}° C",
+                )
+                clouds_city = ttk.Label(
+                    wheater_frame, text=f"Nubes: {city_info._clouds}%"
+                )
+                humidity = ttk.Label(
+                    wheater_frame, text=f"Humedad: {city_info._humidity}%"
+                )
+                name_city.grid(row=4, column=1)
+                name_country.grid(row=4, column=2)
+                celcius_city.grid(row=5, column=1)
+                feelslike_c.grid(row=6, column=1)
+                clouds_city.grid(row=7, column=1)
+                humidity.grid(row=8, column=1)
+
+            except requests.exceptions.RequestException as e:
+                error_msg = ttk.Label(wheater_frame, text=e)
+                error_msg.grid(row=4, column=1)
+
+    city_entry = ttk.Entry(mainframe, width=20)
+    city_entry.grid(row=2, column=1)
+
+    city_entry_label = ttk.Label(mainframe, text="Search city")
+    city_entry_label.grid(row=1, column=1)
+
+    search_btn = ttk.Button(
+        mainframe,
+        text="Search",
+        command=lambda: view_wheater(city_entry.get()),
+    )
+    search_btn.grid(row=3, column=1)
+
+    root.mainloop()
 
 
 if __name__ == "__main__":
